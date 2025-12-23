@@ -1,0 +1,30 @@
+[
+  {
+    "id": "f1250a44-1b0f-4d70-b791-9899822ee480",
+    "servico": "Corte de cabelo",
+    "valor": "30",
+    "data": "2025-12-24",
+    "hora": "11:00"
+  },
+  {
+    "id": "d642b7f8-25ec-4fd8-9a29-e9db6379d55a",
+    "servico": "Corte de cabelo",
+    "valor": "30",
+    "data": "2025-12-24",
+    "hora": "16:00"
+  },
+  {
+    "id": "7048cf0f-d515-42de-94bf-9a0e5a92776c",
+    "servico": "Corte de cabelo",
+    "valor": "30",
+    "data": "2025-12-24",
+    "hora": "16:30"
+  },
+  {
+    "id": "0f41cd24-d6c4-4637-816b-de08ecdb9dc0",
+    "servico": "Corte de cabelo",
+    "valor": "30",
+    "data": "2025-12-25",
+    "hora": "17:30"
+  }
+]
