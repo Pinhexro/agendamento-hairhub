@@ -1,68 +1,71 @@
+require("dotenv").config();
+
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
-const fs = require("fs");
-const { v4: uuid } = require("uuid");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-const DB_FILE = "./db.json";
+// ==============================
+// MONGO DB
+// ==============================
+mongoose
+    .connect(process.env.MONGO_URL)
+    .then(() => console.log("✅ MongoDB conectado"))
+    .catch(err => console.error("❌ Erro MongoDB:", err));
 
-function readDB() {
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
-}
-
-function writeDB(data) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
-
-/* Listar agendamentos */
-app.get("/agendamentos", (req, res) => {
-    const db = readDB();
-    res.json(db.agendamentos);
+// ==============================
+// ROTA RAIZ (OBRIGATÓRIA)
+// ==============================
+app.get("/", (req, res) => {
+    res.send("API HairHub online 🚀");
 });
 
-/* Criar agendamento */
-app.post("/agendamentos", (req, res) => {
-    const { servico, data, hora } = req.body;
+// ==============================
+// MODELO
+// ==============================
+const AgendamentoSchema = new mongoose.Schema({
+    nome: String,
+    telefone: String,
+    servico: String,
+    data: String,
+    hora: String
+});
 
-    if (!servico || !data || !hora) {
-        return res.status(400).json({ error: "Dados incompletos" });
+const Agendamento = mongoose.model("Agendamento", AgendamentoSchema);
+
+// ==============================
+// ROTAS
+// ==============================
+app.get("/agendamentos", async (req, res) => {
+    const dados = await Agendamento.find();
+    res.json(dados);
+});
+
+app.post("/agendamentos", async (req, res) => {
+    const { nome, telefone, servico, data, hora } = req.body;
+
+    const conflito = await Agendamento.findOne({ data, hora });
+    if (conflito) {
+        return res.status(409).json({ error: "Horário ocupado" });
     }
 
-    const db = readDB();
-
-    const horarioOcupado = db.agendamentos.some(
-        a => a.data === data && a.hora === hora
-    );
-
-    if (horarioOcupado) {
-        return res.status(409).json({ error: "Horário já ocupado" });
-    }
-
-    const novo = {
-        id: uuid(),
-        servico,
-        data,
-        hora
-    };
-
-    db.agendamentos.push(novo);
-    writeDB(db);
-
-    res.status(201).json(novo);
+    await Agendamento.create({ nome, telefone, servico, data, hora });
+    res.status(201).json({ message: "Agendamento criado" });
 });
 
-/* Cancelar agendamento */
-app.delete("/agendamentos/:id", (req, res) => {
-    const db = readDB();
-    db.agendamentos = db.agendamentos.filter(a => a.id !== req.params.id);
-    writeDB(db);
-    res.sendStatus(204);
+app.delete("/agendamentos/:id", async (req, res) => {
+    await Agendamento.findByIdAndDelete(req.params.id);
+    res.json({ message: "Agendamento removido" });
 });
 
+// ==============================
+// PORTA (RENDER)
+// ==============================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("Backend rodando na porta", PORT);
+    console.log("🚀 Servidor rodando na porta", PORT);
 });
