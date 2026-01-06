@@ -1,25 +1,18 @@
+// ==============================
+// PROTEGER TODOS AS PÁGINAS
+// ==============================
+
+if (!token) window.location.href = "login.html";
+
 const API = "http://localhost:3000";
 
-async function sendCode() {
+async function login() {
     const phone = document.getElementById("phone").value;
 
-    await fetch(`${API}/auth/send-code`, {
+    const res = await fetch(`${API}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone })
-    });
-
-    alert("Código enviado no WhatsApp");
-}
-
-async function verifyCode() {
-    const phone = document.getElementById("phone").value;
-    const code = document.getElementById("code").value;
-
-    const res = await fetch(`${API}/auth/verify-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code })
     });
 
     const data = await res.json();
