@@ -6,63 +6,114 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(cors({
-    origin: "*"
-}));
-
+/* =========================
+   MIDDLEWARES
+========================= */
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+/* =========================
+   MONGODB CONNECTION
+========================= */
 mongoose
     .connect(process.env.MONGO_URL)
     .then(() => console.log("✅ MongoDB conectado"))
     .catch(err => console.error("❌ Erro MongoDB:", err));
 
+/* =========================
+   ROTAS BÁSICAS
+========================= */
 app.get("/", (req, res) => {
     res.send("API HairHub online 🚀");
 });
 
-// Modelo agendamento MongoDB
+/* =========================
+   SCHEMA & MODEL
+========================= */
 const AgendamentoSchema = new mongoose.Schema({
-    cliente: String,
-    telefone: String,
-    servico: String,
-    valor: Number,
-    data: String,
-    hora: String,
+    nome: { type: String, required: true },
+    telefone: { type: String, required: true },
+    servico: { type: String, required: true },
+    data: { type: String, required: true },
+    hora: { type: String, required: true },
     criadoEm: {
         type: Date,
         default: Date.now
     }
 });
 
+//Bloqueio real de con
+AgendamentoSchema.index({ data: 1, hora: 1 }, { unique: true });
+
 const Agendamento = mongoose.model("Agendamento", AgendamentoSchema);
 
-// Agendamentos
+/* =========================
+   ROTAS DE AGENDAMENTO
+========================= */
+
+// Todos os agendamentos (admin/debug)
 app.get("/agendamentos", async (req, res) => {
-    const dados = await Agendamento.find();
-    res.json(dados);
+    try {
+        const dados = await Agendamento.find().sort({ data: 1, hora: 1 });
+        res.json(dados);
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao buscar agendamentos" });
+    }
+});
+
+// Meus agendamentos (por telefone)
+app.get("/agendamentos/telefone/:telefone", async (req, res) => {
+    try {
+        const { telefone } = req.params;
+        const agendamentos = await Agendamento.find({ telefone });
+        res.json(agendamentos);
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao buscar agendamentos" });
+    }
 });
 
 // Criar agendamento
 app.post("/agendamentos", async (req, res) => {
-    const { nome, telefone, servico, data, hora } = req.body;
+    try {
+        const { nome, telefone, servico, data, hora } = req.body;
 
-    const conflito = await Agendamento.findOne({ data, hora });
-    if (conflito) {
-        return res.status(409).json({ error: "Horário ocupado" });
+        if (!nome || !telefone || !servico || !data || !hora) {
+            return res.status(400).json({ error: "Dados incompletos" });
+        }
+
+        const novo = await Agendamento.create({
+            nome,
+            telefone,
+            servico,
+            data,
+            hora
+        });
+
+        res.status(201).json({
+            message: "Agendamento criado com sucesso",
+            agendamento: novo
+        });
+
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({ error: "Horário já ocupado" });
+        }
+
+        res.status(500).json({ error: "Erro ao criar agendamento" });
     }
-
-    await Agendamento.create({ nome, telefone, servico, data, hora });
-    res.status(201).json({ message: "Agendamento criado" });
 });
 
 // Cancelar agendamento
 app.delete("/agendamentos/:id", async (req, res) => {
-    await Agendamento.findByIdAndDelete(req.params.id);
-    res.json({ message: "Agendamento removido" });
+    try {
+        await Agendamento.findByIdAndDelete(req.params.id);
+        res.json({ message: "Agendamento removido" });
+    } catch (err) {
+        res.status(500).json({ error: "Erro ao remover agendamento" });
+    }
 });
 
-// Porta (RENDER)
+// Server Render
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log("🚀 Servidor rodando na porta", PORT);
