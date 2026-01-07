@@ -4,14 +4,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const agendamentosRoutes = require("../agendamento/js/agendamentos");
-
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URL)
+mongoose
+    .connect(process.env.MONGO_URL)
     .then(() => console.log("✅ MongoDB conectado"))
     .catch(err => console.error("❌ Erro MongoDB:", err));
 
@@ -19,27 +18,29 @@ app.get("/", (req, res) => {
     res.send("API HairHub online 🚀");
 });
 
-// ==============================
-// MODELO
-// ==============================
+// Modelo agendamento MongoDB
 const AgendamentoSchema = new mongoose.Schema({
-    nome: String,
+    cliente: String,
     telefone: String,
     servico: String,
+    valor: Number,
     data: String,
-    hora: String
+    hora: String,
+    criadoEm: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 const Agendamento = mongoose.model("Agendamento", AgendamentoSchema);
 
-// ==============================
-// ROTAS
-// ==============================
+// Agendamentos
 app.get("/agendamentos", async (req, res) => {
     const dados = await Agendamento.find();
     res.json(dados);
 });
 
+// Criar agendamento
 app.post("/agendamentos", async (req, res) => {
     const { nome, telefone, servico, data, hora } = req.body;
 
@@ -52,14 +53,13 @@ app.post("/agendamentos", async (req, res) => {
     res.status(201).json({ message: "Agendamento criado" });
 });
 
+// Cancelar agendamento
 app.delete("/agendamentos/:id", async (req, res) => {
     await Agendamento.findByIdAndDelete(req.params.id);
     res.json({ message: "Agendamento removido" });
 });
 
-// ==============================
-// PORTA (RENDER)
-// ==============================
+// Porta (RENDER)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log("🚀 Servidor rodando na porta", PORT);
