@@ -6,7 +6,10 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: "*"
+}));
+
 app.use(express.json());
 
 mongoose
@@ -60,7 +63,7 @@ app.delete("/agendamentos/:id", async (req, res) => {
 });
 
 // Porta (RENDER)
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log("🚀 Servidor rodando na porta", PORT);
 });
