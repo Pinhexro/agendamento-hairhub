@@ -4,22 +4,17 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const agendamentosRoutes = require("../agendamento/js/agendamentos");
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// ==============================
-// MONGO DB
-// ==============================
-mongoose
-    .connect(process.env.MONGO_URL)
+mongoose.connect(process.env.MONGO_URL)
     .then(() => console.log("✅ MongoDB conectado"))
     .catch(err => console.error("❌ Erro MongoDB:", err));
 
-// ==============================
-// ROTA RAIZ (OBRIGATÓRIA)
-// ==============================
 app.get("/", (req, res) => {
     res.send("API HairHub online 🚀");
 });
